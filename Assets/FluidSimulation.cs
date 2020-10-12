@@ -23,7 +23,7 @@ public class FluidSimulation : MonoBehaviour
         tex.wrapMode = TextureWrapMode.Clamp;
         tex.filterMode = filtermode;
 
-        fluid = new Fluid(0.1f, .01f, 0.1f, N);
+        fluid = new Fluid(0.1f, 0.01f, 0.0002f, N);
 
         RenderFluid();
 
@@ -41,8 +41,9 @@ public class FluidSimulation : MonoBehaviour
         for (int y = 0; y < N; y++) {
             for (int x = 0; x < N; x++) {
                 //texture.SetPixel(x, y, Color.red);
-                tex.SetPixel(x, y, new Color(fluid.density[IX(x,y)],0f , 0f));
+                //tex.SetPixel(x, y, new Color(fluid.density[IX(x,y)],0f , 0f));
                 //tex.SetPixel(x, y, new Color(fluid.Vx[IX(x, y)], fluid.Vy[IX(x, y)], fluid.density[IX(x, y)]));
+                tex.SetPixel(x, y, new Color(/*(Vector2. right * fluid.Vx[IX(x, y)] +  Vector2.up * fluid.Vy[IX(x, y)]).magnitude*/0, Mathf.Abs(fluid.Vx[IX(x, y)]), Mathf.Abs(fluid.Vy[IX(x, y)])));
             }
 
             tex.SetPixel(13, y, Color.blue);
@@ -60,18 +61,33 @@ public class FluidSimulation : MonoBehaviour
     void Update()
     {
 
-
+        var s = Input.mousePosition - mouse0;
+        s.Normalize();
+        s *= 10;
 
         RaycastHit hit;
         if (Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out hit)) {
             Vector2Int v  = Vector2Int.RoundToInt(hit.textureCoord * N);
             if (Input.GetKey(KeyCode.Mouse0)) {
-                fluid.AddDensity(v.x, v.y, 10);
-                fluid.AddVelocity(v.x, v.y, Input.mousePosition.x - mouse0.x, Input.mousePosition.y - mouse0.y);
+                fluid.AddDensity(v.x, v.y, 100);
+                fluid.AddVelocity(v.x, v.y,s.x , s.y);
 
             }
         }
+        var x = Mathf.Sin(Time.time) *40 ;
+        var y = Mathf.Cos(Time.time) *40;
+        //fluid.AddDensity(N / 2, N / 2, 10);
+        //fluid.AddVelocity(N / 2, N / 2, x, y );
 
+        fluid.AddVelocity((int)(N / 1.5), N / 2, -40 *4, 0);
+        fluid.AddVelocity((int)(N / 3), N / 2, 40*4, 0);
+
+
+
+
+
+
+        //fluid.AddVelocity(N / 4, N / 4, x *-1, y * -1);
 
 
         if (Input.GetKeyDown(KeyCode.Space)) {
