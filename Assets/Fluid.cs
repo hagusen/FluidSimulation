@@ -69,6 +69,25 @@ public class Fluid
             //set_bnd(b, v, size);
         }
     }
+    void lin_solve(int b, float[] v, float[,] v0, float a, float c, int iter) {
+        float cRecip = 1.0f / c;
+        for (int k = 0; k < iter; k++) {
+            for (int j = 1; j < size - 1; j++) {
+                for (int i = 1; i < size - 1; i++) {
+                    v[i, j] =
+                        (v0[i, j]
+                            + a * (v[i + 1, j]
+                                    + v[i - 1, j]
+                                    + v[i, j + 1]
+                                    + v[i, j - 1]
+                                    + v[i, j]
+                                    + v[i, j]
+                            )) * cRecip;
+                }
+            }
+            //set_bnd(b, v, size);
+        }
+    }
 
 
     void project(float[] velocX0, float[] velocY0, float[] p, float[] div, int iter, int N) {
