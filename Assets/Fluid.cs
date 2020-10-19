@@ -50,6 +50,7 @@ public class Fluid
 
     // Change to gauss seidel 
     //Double check later
+    // vec to vec
     void lin_solve(int b, Vector2[,] v, Vector2[,] v0, float a, float c, int iter) {
         float cRecip = 1.0f / c;
         for (int k = 0; k < iter; k++) {
@@ -69,19 +70,20 @@ public class Fluid
             //set_bnd(b, v, size);
         }
     }
-    void lin_solve(int b, float[] v, float[,] v0, float a, float c, int iter) {
+    // X -> y
+    void lin_solve(int b, Vector2[,] v, float a, float c, int iter) {
         float cRecip = 1.0f / c;
         for (int k = 0; k < iter; k++) {
             for (int j = 1; j < size - 1; j++) {
                 for (int i = 1; i < size - 1; i++) {
-                    v[i, j] =
-                        (v0[i, j]
-                            + a * (v[i + 1, j]
-                                    + v[i - 1, j]
-                                    + v[i, j + 1]
-                                    + v[i, j - 1]
-                                    + v[i, j]
-                                    + v[i, j]
+                    v[i, j].x =
+                        (v[i, j].y
+                            + a * (v[i + 1, j].x
+                                    + v[i - 1, j].x
+                                    + v[i, j + 1].x
+                                    + v[i, j - 1].x
+                                    + v[i, j].x
+                                    + v[i, j].x
                             )) * cRecip;
                 }
             }
@@ -89,29 +91,29 @@ public class Fluid
         }
     }
 
-
-    void project(float[] velocX0, float[] velocY0, float[] p, float[] div, int iter, int N) {
+    // p = x /// div = y
+    void project(Vector2[,] veloc0, Vector2[,] veloc, int iter, int N) {
         for (int j = 1; j < N - 1; j++) {
             for (int i = 1; i < N - 1; i++) {
-                div[IX(i, j)] = -0.5f * (
-                         velocX0[IX(i + 1, j)]
-                        - velocX0[IX(i - 1, j)]
-                        + velocY0[IX(i, j + 1)]
-                        - velocY0[IX(i, j - 1)]
+                veloc[i, j].y = -0.5f * (
+                         veloc0[i + 1, j].x
+                        - veloc0[i - 1, j].x
+                        + veloc0[i, j + 1].y
+                        - veloc0[i, j - 1].y
                     ) / N;
-                p[IX(i, j)] = 0;
+                veloc[i, j].x = 0;
             }
         }
-        set_bnd(0, div, N);
-        set_bnd(0, p, N);
-        lin_solve(0, p, div, 1, 6, iter, N); // Wat..??
+        set_bnd(0, div, N);         // Fix boundary function alternative?
+        set_bnd(0, veloc.x, N);
+        lin_solve(0, veloc, 1, 6, iter, N); // Wat..??
 
         for (int j = 1; j < N - 1; j++) {
             for (int i = 1; i < N - 1; i++) {
-                velocX0[IX(i, j)] -= 0.5f * (p[IX(i + 1, j)]
-                                                - p[IX(i - 1, j)]) * N;
-                velocY0[IX(i, j)] -= 0.5f * (p[IX(i, j + 1)]
-                                                - p[IX(i, j - 1)]) * N;
+                veloc0[i, j].x -= 0.5f * (veloc[i + 1, j].x
+                                                - veloc[i - 1, j].x) * N;
+                veloc0[i, j].y -= 0.5f * (veloc[i, j + 1].x
+                                                - veloc[i, j - 1].x) * N;
             }
         }
         set_bnd(1, velocX0, N);
@@ -119,7 +121,7 @@ public class Fluid
     }
 
 
-    project(Vx0, Vy0, Vx, Vy, 4, N);
+    //project(Vx0, Vy0, Vx, Vy, 4, N);
 
 
 
