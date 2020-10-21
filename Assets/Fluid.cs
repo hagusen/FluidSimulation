@@ -18,6 +18,7 @@ public class Fluid
     public Vector2[,] velocity;
     public Vector2[,] velocity0;
 
+
     public Fluid(float diffusion, float viscosity, int size) {
 
         this.size = size;
@@ -25,16 +26,16 @@ public class Fluid
         diff = diffusion;
         visc = viscosity;
 
-        s = new float[size,size];
+        s = new float[size, size];
         density = new float[size, size];
 
-        velocity = new Vector2[size, size]; 
+        velocity = new Vector2[size, size];
         velocity0 = new Vector2[size, size];
     }
 
     // Add density to XY (Dye)
     public void AddDensity(int x, int y, float amount) {// Change to vector2Int ?`?
-        density[x,y] += amount;
+        density[x, y] += amount;
     }
     // Add Velocity on XY (vector2 velocity)
     public void AddVelocity(int x, int y, Vector2 amount) {
@@ -42,16 +43,16 @@ public class Fluid
     }
 
 
-    void diffuse(int b, Vector2[,] v, Vector2[,] v0, float dt, int iter) {
+    void Diffuse(Vector2[,] v, Vector2[,] v0, float dt, int iter) {
         float a = dt * diff * (size - 2) * (size - 2);
 
-        lin_solve(b, v, v0, a, 1 + 6 * a, iter);
+        lin_solve(v, v0, a, 1 + 6 * a, iter);
     }
 
     // Change to gauss seidel 
     //Double check later
     // vec to vec
-    void lin_solve(int b, Vector2[,] v, Vector2[,] v0, float a, float c, int iter) {
+    void lin_solve(Vector2[,] v, Vector2[,] v0, float a, float c, int iter) {
         float cRecip = 1.0f / c;
         for (int k = 0; k < iter; k++) {
             for (int j = 1; j < size - 1; j++) {
@@ -67,11 +68,12 @@ public class Fluid
                             )) * cRecip;
                 }
             }
-            //set_bnd(b, v, size);
+            set_bnd(true, v);
         }
     }
-    // X -> y
-    void lin_solve(int b, Vector2[,] v, float a, float c, int iter) {
+    // X -> y only linsolve for x -> y?
+    // wrong
+    void lin_solve(Vector2[,] v, float a, float c, int iter) {
         float cRecip = 1.0f / c;
         for (int k = 0; k < iter; k++) {
             for (int j = 1; j < size - 1; j++) {
@@ -87,37 +89,37 @@ public class Fluid
                             )) * cRecip;
                 }
             }
-            //set_bnd(b, v, size);
+            set_bnd(false, v);
         }
     }
 
     // p = x /// div = y//
-    void project(Vector2[,] veloc0, Vector2[,] veloc, int iter, int N) {
-        for (int j = 1; j < N - 1; j++) {
-            for (int i = 1; i < N - 1; i++) {
-                veloc[i, j].y = -0.5f * (
-                         veloc0[i + 1, j].x
-                        - veloc0[i - 1, j].x
-                        + veloc0[i, j + 1].y
-                        - veloc0[i, j - 1].y
-                    ) / N;
-                veloc[i, j].x = 0;
+    void Project(Vector2[,] velocity0, Vector2[,] velocity, int iter) {
+        for (int j = 1; j < size - 1; j++) {
+            for (int i = 1; i < size - 1; i++) {
+                velocity[i, j].y = -0.5f * (
+                         velocity0[i + 1, j].x
+                        - velocity0[i - 1, j].x
+                        + velocity0[i, j + 1].y
+                        - velocity0[i, j - 1].y
+                    ) / size;
+                velocity[i, j].x = 0;
             }
         }
-        set_bnd(0, div, N);         // Fix boundary function alternative?
-        set_bnd(0, veloc.x, N);
-        lin_solve(0, veloc, 1, 6, iter, N); // Wat..??
+        set_bnd(false, velocity);
+        // Magic !!
+        lin_solve(velocity, 1, 6, iter, size);
 
-        for (int j = 1; j < N - 1; j++) {
-            for (int i = 1; i < N - 1; i++) {
-                veloc0[i, j].x -= 0.5f * (veloc[i + 1, j].x
-                                                - veloc[i - 1, j].x) * N;
-                veloc0[i, j].y -= 0.5f * (veloc[i, j + 1].x
-                                                - veloc[i, j - 1].x) * N;
+        for (int j = 1; j < size - 1; j++) {
+            for (int i = 1; i < size - 1; i++) {
+                velocX[IX(i, j)] -= 0.5f * (p[IX(i + 1, j)]
+                                                - p[IX(i - 1, j)]) * size;
+                velocY[IX(i, j)] -= 0.5f * (p[IX(i, j + 1)]
+                                                - p[IX(i, j - 1)]) * size;
             }
         }
-        set_bnd(1, velocX0, N);
-        set_bnd(2, velocY0, N);
+        set_bnd(1, velocX, size);
+        set_bnd(2, velocY, size);
     }
 
 
@@ -126,28 +128,95 @@ public class Fluid
 
 
     //  Possible rewrite big
-    void set_bnd(int b, float[] x, int N) {
+    void set_bnd(bool b, Vector2[,] x) {
 
-        for (int i = 1; i < N - 1; i++) {
-            x[IX(i, 0)] = b == 2 ? -x[IX(i, 1)] : x[IX(i, 1)];
-            x[IX(i, N - 1)] = b == 2 ? -x[IX(i, N - 2)] : x[IX(i, N - 2)];
+        if (b) {
+
+            //set to equal or -equal of the neighbor
+            for (int i = 1; i < size - 1; i++) {
+                x[i, 0] = new Vector2(x[i, 1].x, -x[i, 1].y); // optional    x[i, 0] =  x[i, 1] * -Vector2.Up; To negate Y?
+                x[i, size - 1] = new Vector2(x[i, size - 2].x, -x[i, size - 2].y);
+            }
+
+            for (int j = 1; j < size - 1; j++) {
+                x[0, j] = new Vector2(-x[1, j].x, x[1, j].y);
+                x[size - 1, j] = new Vector2(-x[size - 2, j].x, x[size - 2, j].y);
+            }
+        }
+        else {
+
+            // If b== 0 then set borders equal to their neighbors
+            for (int i = 1; i < size - 1; i++) {
+                x[i, 0] = x[i, 1];
+                x[i, size - 1] = x[i, size - 2];
+            }
+            for (int j = 1; j < size - 1; j++) {
+                x[0, j] = x[1, j];
+                x[size - 1, j] = x[size - 2, j];
+            }
         }
 
-        for (int j = 1; j < N - 1; j++) {
-            x[IX(0, j)] = b == 1 ? -x[IX(1, j)] : x[IX(1, j)];
-            x[IX(N - 1, j)] = b == 1 ? -x[IX(N - 2, j)] : x[IX(N - 2, j)];
+        // Corners
+        x[0, 0] = 0.5f * (x[1, 0] + x[0, 1]);
+        x[0, size - 1] = 0.5f * (x[1, size - 1] + x[0, size - 2]);
+
+        x[size - 1, 0] = 0.5f * (x[size - 2, 0] + x[size - 1, 1]);
+        x[size - 1, size - 1] = 0.5f * (x[size - 2, size - 1] + x[size - 1, size - 2]);
+    }
+
+    void set_bndV2(int b, Vector2[,] x) {
+
+        // If b== 0 then set borders equal to their neighbors
+        for (int i = 1; i < size - 1; i++) {
+            x[i, 0] = x[i, 1];
+            x[i, size - 1] = x[i, size - 2];
+        }
+        for (int j = 1; j < size - 1; j++) {
+            x[0, j] = x[1, j];
+            x[size - 1, j] = x[size - 2, j];
         }
 
+        if (b == 1) {
 
-        x[IX(0, 0)] = 0.5f * (x[IX(1, 0)] + x[IX(0, 1)]);
-        x[IX(0, N - 1)] = 0.5f * (x[IX(1, N - 1)] + x[IX(0, N - 2)]);
-        x[IX(N - 1, 0)] = 0.5f * (x[IX(N - 2, 0)] + x[IX(N - 1, 1)]);
-        x[IX(N - 1, N - 1)] = 0.5f * (x[IX(N - 2, N - 1)] + x[IX(N - 1, N - 2)]);
+            for (int i = 1; i < size - 1; i++) { // Top and bottom wall
+                x[i, 0].y = -x[i, 0].y;
+                x[i, size - 1].y = -x[i, size - 1].y;
+            }
+            for (int j = 1; j < size - 1; j++) {// Right and Left wall
+                x[0, j].x = -x[0, j].x;
+                x[size - 1, j].x = -x[size - 1, j].x;
+            }
+        }
 
+        // Corners
+        x[0, 0] = 0.5f * (x[1, 0] + x[0, 1]);
+        x[0, size - 1] = 0.5f * (x[1, size - 1] + x[0, size - 2]);
 
-
+        x[size - 1, 0] = 0.5f * (x[size - 2, 0] + x[size - 1, 1]);
+        x[size - 1, size - 1] = 0.5f * (x[size - 2, size - 1] + x[size - 1, size - 2]);
     }
 
 
+    void FluidStep(MikeAsh_Fluid fluid) {
+
+
+        // Diffuse velocites 
+        Diffuse(velocity0, velocity, dt, 4);
+        //diffuse(velocity0, velocity, dt, iterations)
+
+        //Clean up to make sure density is the same?
+        Project(velocity0, velocity, 4);
+
+        // Advect on the velocityes
+        advect(1, Vx, Vx0, Vx0, Vy0, dt, N);
+        advect(2, Vy, Vy0, Vx0, Vy0, dt, N);
+
+        //Clean upp again
+        project(Vx, Vy, Vx0, Vy0, 4, N);
+
+        // Diffuse density(dye) and advect it
+        diffuse(0, s, density, diff, dt, 4, N);
+        advect(0, density, s, Vx, Vy, dt, N);
+    }
 
 }
