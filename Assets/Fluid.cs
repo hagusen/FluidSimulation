@@ -1,7 +1,9 @@
-﻿using System.Collections;
+﻿
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+[System.Serializable]
 public class Fluid
 {
 
@@ -12,9 +14,9 @@ public class Fluid
     public float visc; // Viscosity
 
 
+
     public float[,] density;
     public float[,] s; // Density0
-
     public Vector2[,] velocity;
     public Vector2[,] velocity0;
 
@@ -44,7 +46,7 @@ public class Fluid
 
 
     void Diffuse(Vector2[,] v, Vector2[,] v0, float dt, int iter) {
-        float a = dt * diff * (size - 2) * (size - 2);
+        float a = dt * visc * (size - 2) * (size - 2);
 
         lin_solve(v, v0, a, 1 + 6 * a, iter);
     }
@@ -108,23 +110,83 @@ public class Fluid
         }
         set_bnd(false, velocity);
         // Magic !!
-        lin_solve(velocity, 1, 6, iter, size);
+        lin_solve(velocity, 1, 6, iter);
 
         for (int j = 1; j < size - 1; j++) {
             for (int i = 1; i < size - 1; i++) {
-                velocX[IX(i, j)] -= 0.5f * (p[IX(i + 1, j)]
-                                                - p[IX(i - 1, j)]) * size;
-                velocY[IX(i, j)] -= 0.5f * (p[IX(i, j + 1)]
-                                                - p[IX(i, j - 1)]) * size;
+                velocity0[i, j].x -= 0.5f * (velocity[i + 1, j].x
+                                                - velocity[i - 1, j].x) * size;
+                velocity0[i, j].y -= 0.5f * (velocity[i, j + 1].x
+                                                - velocity[i, j - 1].x) * size;
             }
         }
-        set_bnd(1, velocX, size);
-        set_bnd(2, velocY, size);
+
+        set_bnd(true, velocity0);
     }
 
 
     //project(Vx0, Vy0, Vx, Vy, 4, N);
 
+
+
+    void Advect(Vector2[,] velocity, Vector2[,] velocity0, float dt) {
+        float i0, i1, j0, j1;
+
+        float dtx = dt * (size - 2);
+        float dty = dt * (size - 2);
+
+        float s0, s1, t0, t1;
+        float tmp1, tmp2, x, y;
+
+        float sizefloat = size;
+        float ifloat, jfloat;
+        int i, j;
+
+
+        for (j = 1, jfloat = 1; j < size - 1; j++, jfloat++) {
+            for (i = 1, ifloat = 1; i < size - 1; i++, ifloat++) {
+                tmp1 = dtx * velocity0[i, j].x;
+                tmp2 = dty * velocity0[i, j].y;
+
+                x = ifloat - tmp1;
+                y = jfloat - tmp2;
+
+                //mathf.clamp?
+                if (x < 0.5f) 
+                    x = 0.5f;
+                if (x > sizefloat + 0.5f) 
+                    x = sizefloat + 0.5f;
+
+                i0 = Mathf.Floor(x);
+                i1 = i0 + 1.0f;
+
+                if (y < 0.5f) 
+                    y = 0.5f;
+                if (y > sizefloat + 0.5f) 
+                    y = sizefloat + 0.5f;
+
+                j0 = Mathf.Floor(y);
+                j1 = j0 + 1.0f;
+
+                s1 = x - i0;
+                s0 = 1.0f - s1;
+                t1 = y - j0;
+                t0 = 1.0f - t1;
+
+                int i0i = (int)Mathf.Clamp(i0, 0, size - 1);
+                int i1i = (int)Mathf.Clamp(i1, 0, size - 1);
+                int j0i = (int)Mathf.Clamp(j0, 0, size - 1);
+                int j1i = (int)Mathf.Clamp(j1, 0, size - 1);
+
+                // fixxxxxxxxxxxxx
+                velocity[i, j] =
+                    // maybe will break it v0!
+                     s0 * (t0 * velocity0[i0i, j0i] + t1 * velocity0[i0i, j1i]) +
+                     s1 * (t0 * velocity0[i1i, j0i] + t1 * velocity0[i1i, j1i]);
+            }
+        }
+        set_bnd(true, velocity);
+    }
 
 
     //  Possible rewrite big
@@ -197,26 +259,26 @@ public class Fluid
     }
 
 
-    void FluidStep(MikeAsh_Fluid fluid) {
+    public void FluidStep(float dt, int iter = 4) {
 
 
         // Diffuse velocites 
-        Diffuse(velocity0, velocity, dt, 4);
-        //diffuse(velocity0, velocity, dt, iterations)
+        Diffuse(velocity0, velocity, dt, iter);
 
         //Clean up to make sure density is the same?
-        Project(velocity0, velocity, 4);
+        Project(velocity0, velocity, iter);
 
         // Advect on the velocityes
-        advect(1, Vx, Vx0, Vx0, Vy0, dt, N);
-        advect(2, Vy, Vy0, Vx0, Vy0, dt, N);
+        Advect(velocity, velocity0, dt);
 
-        //Clean upp again
-        project(Vx, Vy, Vx0, Vy0, 4, N);
+
+        //Clean upp again but other way?
+        Project(velocity, velocity0, iter);
+
 
         // Diffuse density(dye) and advect it
-        diffuse(0, s, density, diff, dt, 4, N);
-        advect(0, density, s, Vx, Vy, dt, N);
+        //diffuse(0, s, density, diff, dt, 4, N);
+        //advect(0, density, s, Vx, Vy, dt, N);
     }
 
 }
