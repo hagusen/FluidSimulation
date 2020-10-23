@@ -44,7 +44,8 @@ public class FluidSimulation : MonoBehaviour
                 //tex.SetPixel(x, y, new Color(fluid.density[IX(x,y)],0f , 0f));
                 //tex.SetPixel(x, y, new Color(fluid.Vx[IX(x, y)], fluid.Vy[IX(x, y)], fluid.density[IX(x, y)]));
                 if (render) {
-                    tex.SetPixel(x, y, new Color( fluid.velocity[x, y].magnitude , fluid.velocity[x, y].magnitude, fluid.velocity[x, y].magnitude));
+                    //tex.SetPixel(x, y, new Color( fluid.velocity[x, y].magnitude , fluid.velocity[x, y].magnitude, fluid.velocity[x, y].magnitude));
+                    tex.SetPixel(x, y, new Color( fluid.velocity[x, y].x, -fluid.velocity[x, y].x, Mathf.Abs(fluid.velocity[x, y].y)));
 
                 }
                 else {

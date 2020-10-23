@@ -48,26 +48,31 @@ public class Fluid
     void Diffuse(Vector2[,] v, Vector2[,] v0, float dt, int iter) {
         float a = dt * visc * (size - 2) * (size - 2);
 
-        lin_solve(v, v0, a, 1 + 6 * a, iter);
+        lin_solve(v, v0, a, 1 + 4 * a, iter);
+        // Why a 6? a = step 
     }
 
     // Change to gauss seidel 
     //Double check later
     // vec to vec
     void lin_solve(Vector2[,] v, Vector2[,] v0, float a, float c, int iter) {
-        float cRecip = 1.0f / c;
+        //float cRecip = 1.0f / c;
         for (int k = 0; k < iter; k++) {
             for (int j = 1; j < size - 1; j++) {
                 for (int i = 1; i < size - 1; i++) {
                     v[i, j] =
                         (v0[i, j]
-                            + a * (v[i + 1, j]
+                            + a * 
+                            // Neighbors
+                            (v[i + 1, j]
                                     + v[i - 1, j]
                                     + v[i, j + 1]
                                     + v[i, j - 1]
-                                    + v[i, j]
-                                    + v[i, j]
-                            )) * cRecip;
+                                    //
+
+                                    //+ v[i, j]
+                                    //+ v[i, j]
+                            )) / c;
                 }
             }
             set_bnd(true, v);
