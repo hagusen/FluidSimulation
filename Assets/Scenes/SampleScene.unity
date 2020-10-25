@@ -361,7 +361,7 @@ MonoBehaviour:
   filtermode: 0
   tex: {fileID: 0}
   diffuse: 0.001
-  viscosity: 0.00001
+  viscosity: 0.0001
   render: 0
   power: 8
 --- !u!64 &1398899434
