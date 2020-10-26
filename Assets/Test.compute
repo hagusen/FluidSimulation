@@ -1,15 +1,89 @@
 ﻿// Each #kernel tells which function to compile; you can have many kernels
-#pragma kernel CSMain
+#pragma kernel test
+#pragma kernel LinearSolve
 
 // Create a RenderTexture with enableRandomWrite flag and set it
 // with cs.SetTexture
 RWTexture2D<float4> Result;
 
-[numthreads(8,8,1)]
-void CSMain (uint3 id : SV_DispatchThreadID)
+
+RWStructuredBuffer<float> floats;
+
+int columnsize;
+
+
+[numthreads(32, 32, 1)]
+void test(uint3 id : SV_DispatchThreadID)
 {
     // TODO: insert actual code here!
     //dcfv
+	
+	
+	
+	
+	floats[id.x * columnsize + id.y] = floats[id.x * columnsize + id.y] +
+										(floats[(id.x + 1) * columnsize + id.y] +
+										floats[(id.x - 1) * columnsize + id.y] +
+										floats[id.x * columnsize + (id.y + 1)] +
+										floats[id.x * columnsize + (id.y - 1)]) / 4;
+	
+	
 
-    Result[id.xy] = float4(id.x & id.y, (id.x & 15)/15.0, (id.y & 15)/15.0, 0.0);
+	
+	/*
+	for (int i = 0; i < 10; i++)
+	{
+
+		Result[uint2(id.x, 44 + i)] = float4(1, 0, 0, 0.0);
+	}
+
+	for (int i = 0; i < 10; i++)
+	{
+
+		Result[uint2(33 + i, id.y)] += float4(0, 1, 0, 0.0);
+	}*/
+
+    
+	//Result[uint2(id.x, id.y)] = Result[uint2(id.x, id.y)] ;
 }
+
+
+RWStructuredBuffer<float> v;
+RWStructuredBuffer<float> v0;
+int size;
+float a;
+float c;
+
+[numthreads(32, 32, 1)]
+void LinearSolve(uint3 id : SV_DispatchThreadID)
+{
+	if (id.x == 0 || id.y == 0)
+	{
+		return;
+	}
+	if (id.x == size - 1 || id.y == size -1)
+	{
+		return;
+	}
+
+
+		v[id.x * size + id.y] =
+                        (v0[id.x * size + id.y]
+                            + a *
+                            // Neighbors
+									(v[(id.x + 1) * size + id.y]
+                                    + v[(id.x - 1) * size + id.y]
+                                    + v[id.x * size + (id.y + 1)]
+                                    + v[id.x * size + (id.y - 1)]
+                            //
+
+                            //+ v[i, j]
+                            //+ v[i, j]
+                            )) / c;
+
+
+	
+
+	}
+
+

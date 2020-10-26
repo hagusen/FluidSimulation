@@ -18,17 +18,25 @@ public class FluidSimulation : MonoBehaviour
     public float power = 8;
 
 
+    public ComputeShader cs;
+
+
     void Start() {
         tex = new Texture2D(N, N, TextureFormat.RGB24, false);
         tex.wrapMode = TextureWrapMode.Clamp;
         tex.filterMode = filtermode;
 
-        fluid = new Fluid(diffuse, viscosity, N);
+        fluid = new Fluid(diffuse, viscosity, N, cs);
 
         RenderFluid();
 
         //fluid.AddDensity(2, 3, 100);
         //fluid.AddVelocity(2, 3, );
+
+
+
+
+        // Call compute shader
 
 
 
@@ -115,5 +123,7 @@ public class FluidSimulation : MonoBehaviour
         mouse0 = Input.mousePosition;
     }
 
-
+    private void OnDestroy() {
+        fluid.OnDestroy();
+    }
 }

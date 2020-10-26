@@ -1,6 +1,8 @@
 ﻿
 using System.Collections;
 using System.Collections.Generic;
+using System.Drawing;
+using System.Linq;
 using UnityEngine;
 
 [System.Serializable]
@@ -20,8 +22,13 @@ public class Fluid
     public Vector2[,] velocity;
     public Vector2[,] velocity0;
 
+    public ComputeShader cstest;
+    public ComputeBuffer vBuffer;
+    public ComputeBuffer v0Buffer;
+    public int kernel;
+    public bool gpuBoost;
 
-    public Fluid(float diffusion, float viscosity, int size) {
+    public Fluid(float diffusion, float viscosity, int size, ComputeShader cs, bool gpuBoost = false) {
 
         this.size = size;
 
@@ -33,6 +40,17 @@ public class Fluid
 
         velocity = new Vector2[size, size];
         velocity0 = new Vector2[size, size];
+
+        this.gpuBoost = gpuBoost;
+        //Compute stuff
+        cstest = cs;
+        vBuffer = new ComputeBuffer(size * size, 8);
+        v0Buffer = new ComputeBuffer(size * size, 8);
+        kernel = cstest.FindKernel("LinearSolve");
+        cstest.SetBuffer(kernel, "v", vBuffer);
+        cstest.SetBuffer(kernel, "v0", v0Buffer);
+
+        cstest.SetInt("size", size);
     }
 
     // Add density to XY (Dye)
@@ -52,30 +70,63 @@ public class Fluid
         // Why a 6? a = step 
     }
 
-    // Change to gauss seidel 
-    //Double check later
+    Vector2[] vb = new Vector2[4096];
+        Vector2[] v0b = new Vector2[4096];
     // vec to vec
     void lin_solve(Vector2[,] v, Vector2[,] v0, float a, float c, int iter) {
-        //float cRecip = 1.0f / c;
-        for (int k = 0; k < iter; k++) {
-            for (int j = 1; j < size - 1; j++) {
-                for (int i = 1; i < size - 1; i++) {
-                    v[i, j] =
-                        (v0[i, j]
-                            + a * 
-                            // Neighbors
-                            (v[i + 1, j]
-                                    + v[i - 1, j]
-                                    + v[i, j + 1]
-                                    + v[i, j - 1]
-                                    //
 
-                                    //+ v[i, j]
-                                    //+ v[i, j]
-                            )) / c;
+
+        // Call compute
+
+        if (gpuBoost) {
+
+
+            vb = v.Cast<Vector2>().ToArray();
+            v0b = v0.Cast<Vector2>().ToArray();
+
+            vBuffer.SetData(vb);
+            v0Buffer.SetData(vb);
+            cstest.SetFloat("a", a);
+            cstest.SetFloat("c", c);
+
+            for (int i = 0; i < iter; i++) {
+                cstest.Dispatch(kernel, 2, 2, 1);
+
+
+                vBuffer.GetData(vb);
+                for (int x = 0; x < size; x++) {
+                    for (int y = 0; y < size; y++) {
+                        v[x, y] = vb[x * size + y];
+                    }
                 }
+
+                set_bnd(true, v);
             }
-            set_bnd(true, v);
+        }
+        else {
+
+
+            //float cRecip = 1.0f / c;
+            for (int k = 0; k < iter; k++) {
+                for (int j = 1; j < size - 1; j++) {
+                    for (int i = 1; i < size - 1; i++) {
+                        v[i, j] =
+                            (v0[i, j]
+                                + a *
+                                // Neighbors
+                                (v[i + 1, j]
+                                        + v[i - 1, j]
+                                        + v[i, j + 1]
+                                        + v[i, j - 1]
+                                //
+
+                                //+ v[i, j]
+                                //+ v[i, j]
+                                )) / c;
+                    }
+                }
+                set_bnd(true, v);
+            }
         }
     }
     // X -> y only linsolve for x -> y?
@@ -157,17 +208,17 @@ public class Fluid
                 y = jfloat - tmp2;
 
                 //mathf.clamp?
-                if (x < 0.5f) 
+                if (x < 0.5f)
                     x = 0.5f;
-                if (x > sizefloat + 0.5f) 
+                if (x > sizefloat + 0.5f)
                     x = sizefloat + 0.5f;
 
                 i0 = Mathf.Floor(x);
                 i1 = i0 + 1.0f;
 
-                if (y < 0.5f) 
+                if (y < 0.5f)
                     y = 0.5f;
-                if (y > sizefloat + 0.5f) 
+                if (y > sizefloat + 0.5f)
                     y = sizefloat + 0.5f;
 
                 j0 = Mathf.Floor(y);
@@ -185,7 +236,7 @@ public class Fluid
 
                 // fixxxxxxxxxxxxx
                 velocity[i, j] =
-                    // maybe will break it v0!
+                     // maybe will break it v0!
                      s0 * (t0 * velocity0[i0i, j0i] + t1 * velocity0[i0i, j1i]) +
                      s1 * (t0 * velocity0[i1i, j0i] + t1 * velocity0[i1i, j1i]);
             }
@@ -286,4 +337,12 @@ public class Fluid
         //advect(0, density, s, Vx, Vy, dt, N);
     }
 
+
+    public void OnDestroy() {
+
+        vBuffer.Dispose();
+        v0Buffer.Dispose();
+
+
+    }
 }
