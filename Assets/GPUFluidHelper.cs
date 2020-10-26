@@ -14,19 +14,21 @@ public class GPUFluidHelper : MonoBehaviour
 
     public int size;
     public int iterations = 4;
-    [Range(0.000001f, 0.01f)]
+
     public float viscosity; // Viscosity
 
     [Header("other")]
     public int kernel;
     ComputeBuffer velocities;
     ComputeBuffer velocities0;
-
-
+    public FilterMode filtermode = FilterMode.Point;
+    public Texture2D tex;
+    public float[] d;
 
 
     //
     public RenderTexture result;
+    public Vector2[] v;
 
 
     private void OnRenderImage(RenderTexture source, RenderTexture destination) {
@@ -34,7 +36,9 @@ public class GPUFluidHelper : MonoBehaviour
 
 
 
-        Graphics.Blit(result, destination, (Vector2.right * Screen.width + Vector2.up * Screen.height) / 100, -Vector2.one * 2); // send to screen
+        //Graphics.Blit(result, destination, (Vector2.right * Screen.width + Vector2.up * Screen.height) / 100, -Vector2.one * 2); // send to screen
+        //Graphics.Blit(result, destination, (Vector2.right * Screen.width + Vector2.up * Screen.height) / 100, Vector2.zero); // send to screen
+        Graphics.Blit(result, destination); // send to screen
 
     }
 
@@ -53,6 +57,9 @@ public class GPUFluidHelper : MonoBehaviour
     // Start is called before the first frame update
     void Start() {
 
+        v = new Vector2[size * size];
+
+
         velocities = new ComputeBuffer(size * size, 8);
         velocities0 = new ComputeBuffer(size * size, 8);
 
@@ -61,11 +68,19 @@ public class GPUFluidHelper : MonoBehaviour
         shader.SetFloat("viscosity", viscosity);
         shader.SetFloat("dt", Time.deltaTime);
 
-        threads = 8;//size / 32;
+        threads = size / 32;
 
-        result = new RenderTexture(128, 128, 32);
+        result = new RenderTexture(size, size, 24);
+        result.filterMode = FilterMode.Point;
+        result.wrapMode = TextureWrapMode.Clamp;
         result.enableRandomWrite = true;
         result.Create();
+
+        tex = new Texture2D(size, size, TextureFormat.RGB24, false);
+        tex.wrapMode = TextureWrapMode.Clamp;
+        tex.filterMode = filtermode;
+      
+
 
         shader.SetTexture(kernel, "Result", result);
 
@@ -117,13 +132,11 @@ public class GPUFluidHelper : MonoBehaviour
 
         addVelocity = shader.FindKernel("AddVelocity");
         shader.SetBuffer(addVelocity, "v", velocities);
-        float[] d = new float[2];
-        d[0] = 5;
-        d[1] = 5;
+
         shader.SetFloats("velToAdd", d);
         int[] i = new int[2];
-        i[0] = 5;
-        i[1] = 5;
+        i[0] = 50;
+        i[1] = 50;
         shader.SetInts("position", i);
 
 
@@ -138,6 +151,19 @@ public class GPUFluidHelper : MonoBehaviour
     }
 
     private void FluidUpdate() {
+
+        shader.SetInt("size", size);
+        shader.SetInt("iterations", iterations);
+        shader.SetFloat("viscosity", viscosity);
+        shader.SetFloat("dt", Time.deltaTime);
+
+        float a = Time.deltaTime * viscosity * (size - 2) * (size - 2);
+        shader.SetFloat("a", a);
+        shader.SetFloat("c", 1 + 4 * a);
+
+        shader.SetFloat("dtx", Time.deltaTime * (size - 2));
+        shader.SetFloat("dty", Time.deltaTime * (size - 2));
+        shader.SetFloat("sizefloat", size);
 
         //Diffuse
         for (int i = 0; i < iterations; i++) {
@@ -162,11 +188,20 @@ public class GPUFluidHelper : MonoBehaviour
     }
 
 
-
     // Update is called once per frame
     void Update() {
 
         FluidUpdate();
+
+        velocities0.GetData(v);
+
+        if (Input.GetKeyDown(KeyCode.Space)) {
+
+        }
+
+        shader.SetFloats("velToAdd", d);
+
+        shader.Dispatch(addVelocity, threads, threads, 1);
 
 
 

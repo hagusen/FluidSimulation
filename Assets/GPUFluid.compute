@@ -38,7 +38,7 @@ void shadertest(uint3 id : SV_DispatchThreadID)
 float a; // step for linear solve
 float c; // average of neighbors
 
-[numthreads(16, 16, 1)]
+[numthreads(32, 32, 1)]
 void LinearSolve(uint3 id : SV_DispatchThreadID)
 {
 	if (id.x == 0 || id.y == 0)
@@ -64,7 +64,7 @@ void LinearSolve(uint3 id : SV_DispatchThreadID)
 }
 
 // for v0 true
-[numthreads(16, 16, 1)]
+[numthreads(32, 32, 1)]
 void Setboundsv0(uint3 id : SV_DispatchThreadID)
 {
     // TODO: insert actual code here!
@@ -93,7 +93,7 @@ void Setboundsv0(uint3 id : SV_DispatchThreadID)
 
 
 
-[numthreads(16, 16, 1)]
+[numthreads(32, 32, 1)]
 void ProjectStart(uint3 id : SV_DispatchThreadID)
 {
     // TODO: insert actual code here!
@@ -124,7 +124,7 @@ void ProjectStart(uint3 id : SV_DispatchThreadID)
 }
 
 
-[numthreads(16, 16, 1)]
+[numthreads(32, 32, 1)]
 void LinearSolve2(uint3 id : SV_DispatchThreadID)
 {
 	if (id.x == 0 || id.y == 0)
@@ -145,8 +145,9 @@ void LinearSolve2(uint3 id : SV_DispatchThreadID)
 									(v[(id.x + 1) * size + id.y].x
                                     + v[(id.x - 1) * size + id.y].x
                                     + v[id.x * size + (id.y + 1)].x
-                                    + v[id.x * size + (id.y - 1)].x)
-							) / 4;
+                                    + v[id.x * size + (id.y - 1)].x
+									+ v[index].x + v[index].x)
+							) /6;
 	
 	
 	
@@ -163,7 +164,7 @@ void LinearSolve2(uint3 id : SV_DispatchThreadID)
 }
 
 
-[numthreads(16, 16, 1)]
+[numthreads(32, 32, 1)]
 void ProjectEnd(uint3 id : SV_DispatchThreadID)
 {
     // TODO: insert actual code here!
@@ -209,7 +210,7 @@ float tmp1, tmp2, x, y;
 
 float ifloat, jfloat;
 
-[numthreads(16, 16, 1)]
+[numthreads(32, 32, 1)]
 void Advect(uint3 id : SV_DispatchThreadID)
 {
     // TODO: insert actual code here!
@@ -275,7 +276,7 @@ void Advect(uint3 id : SV_DispatchThreadID)
 }
 
 
-[numthreads(16, 16, 1)]
+[numthreads(32, 32, 1)]
 void Render(uint3 id : SV_DispatchThreadID)
 {
     // TODO: insert actual code here!
@@ -290,11 +291,13 @@ void Render(uint3 id : SV_DispatchThreadID)
 float2 velToAdd;
 uint2 position;
 
-[numthreads(1, 1, 1)]
+[numthreads(32, 32, 1)]
 void AddVelocity(uint3 id : SV_DispatchThreadID)
 {
     // TODO: insert actual code here!
-	int index = position.x * size + position.y;
+	int index = id.x * size + id.y;
+	
+	//int index = position.x * size + position.y;
 
 	v[index] += velToAdd;
 	

@@ -290,11 +290,17 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   shader: {fileID: 7200000, guid: f373821cb952c124e8fd817a79dfc97b, type: 3}
-  size: 128
-  iterations: 4
-  viscosity: 0.00244
+  size: 1024
+  iterations: 12
+  viscosity: 0.00123
   kernel: 0
+  filtermode: 0
+  tex: {fileID: 0}
+  d:
+  - 1
+  - 1
   result: {fileID: 0}
+  v: []
 --- !u!20 &519420031
 Camera:
   m_ObjectHideFlags: 0

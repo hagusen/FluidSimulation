@@ -124,10 +124,8 @@ public class Fluid
 
         for (int j = 1; j < size - 1; j++) {
             for (int i = 1; i < size - 1; i++) {
-                velocity0[i, j].x -= 0.5f * (velocity[i + 1, j].x
-                                                - velocity[i - 1, j].x) * size;
-                velocity0[i, j].y -= 0.5f * (velocity[i, j + 1].x
-                                                - velocity[i, j - 1].x) * size;
+                velocity0[i, j].x -= 0.5f * (velocity[i + 1, j].x - velocity[i - 1, j].x) * size;
+                velocity0[i, j].y -= 0.5f * (velocity[i, j + 1].x - velocity[i, j - 1].x) * size;
             }
         }
 
