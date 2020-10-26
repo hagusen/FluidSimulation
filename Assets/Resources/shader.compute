@@ -20,6 +20,7 @@ struct circleCollider{
 	int dummy3;
 };
 
+
 RWTexture2D<float4> renderTexture;
 RWStructuredBuffer<hairNode> hairNodesBuffer;
 RWStructuredBuffer<uint> visBuffer;

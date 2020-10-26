@@ -1,0 +1,301 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel shadertest
+#pragma kernel LinearSolve
+#pragma kernel Setboundsv0
+#pragma kernel ProjectStart
+#pragma kernel LinearSolve2
+#pragma kernel ProjectEnd
+#pragma kernel Advect
+#pragma kernel Render
+#pragma kernel AddVelocity
+
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+RWTexture2D<float4> Result;
+
+
+RWStructuredBuffer<float2> v;
+RWStructuredBuffer<float2> v0;
+
+int size;
+int iterations;
+float viscosity; // Viscosity
+float dt;
+
+
+
+[numthreads(8, 8, 1)]
+void shadertest(uint3 id : SV_DispatchThreadID)
+{
+    // TODO: insert actual code here!
+	Result[id.xy] = float4(id.x & id.y, (id.x & 15) / 15.0, (id.y & 15) / 15.0, 0.0);
+    
+    
+}
+
+
+float a; // step for linear solve
+float c; // average of neighbors
+
+[numthreads(16, 16, 1)]
+void LinearSolve(uint3 id : SV_DispatchThreadID)
+{
+	if (id.x == 0 || id.y == 0)
+	{
+		return;
+	}
+	if (id.x == size - 1 || id.y == size - 1)
+	{
+		return;
+	}
+
+	int index = id.x * size + id.y;
+    
+    
+
+	v[index] = (v0[index] + a *
+                            // Neighbors
+									(v[(id.x + 1) * size + id.y]
+                                    + v[(id.x - 1) * size + id.y]
+                                    + v[id.x * size + (id.y + 1)]
+                                    + v[id.x * size + (id.y - 1)])
+							) / c;
+}
+
+// for v0 true
+[numthreads(16, 16, 1)]
+void Setboundsv0(uint3 id : SV_DispatchThreadID)
+{
+    // TODO: insert actual code here!
+	int index = id.x * size + id.y;
+	
+	// x border
+	v0[id.x] = float2(v0[id.x + 1].x, -v0[id.x + 1].y);
+	v0[id.x + size - 1] = float2(v0[id.x + size - 1].x, -v0[id.x + size - 1].y);
+	
+	// y Border
+	v0[id.y] = float2(-v0[size + id.y].x, v0[size + id.y].y);
+	v0[size - 1 * size + id.y] = float2(-v0[size - 2 + id.y].x, v0[size - 2 + id.y].y);
+	
+	
+	//Corners
+	if (id.x == 0 && id.y == 0)
+	{
+		v0[0] = 0.5f * (v0[size] + v0[1]);
+		v0[size - 1] = 0.5f * (v0[size * size - 1] + v0[size - 2]);
+		v0[size * size - 1] = 0.5f * (v0[size * size - 2] + v0[size * size - 1 + 1]);
+		v0[size * size - 1 + size - 1] = 0.5f * (v0[size * size - 2 + size - 1] + v0[size * size - 1 + size - 2]);
+	
+	}
+}
+
+
+
+
+[numthreads(16, 16, 1)]
+void ProjectStart(uint3 id : SV_DispatchThreadID)
+{
+    // TODO: insert actual code here!
+	int index = id.x * size + id.y;
+
+	
+	
+	v[index].y = -0.5f *
+									(v0[(id.x + 1) * size + id.y].x
+                                    - v0[(id.x - 1) * size + id.y].x
+                                    + v0[id.x * size + (id.y + 1)].y
+                                    - v0[id.x * size + (id.y - 1)].y	
+									) / size;
+	
+	v[index].x = 0;
+	
+	
+	//set bounds false
+	// x border
+	v[id.x] = v[id.x + 1];
+	v[id.x + size - 1] = v[id.x + size - 1];
+	// y Border
+	v[id.y] = v[size + id.y];
+	v[(size - 1) * size + id.y] = v[(size - 2) + id.y];
+	
+	//
+	
+}
+
+
+[numthreads(16, 16, 1)]
+void LinearSolve2(uint3 id : SV_DispatchThreadID)
+{
+	if (id.x == 0 || id.y == 0)
+	{
+		return;
+	}
+	if (id.x == size - 1 || id.y == size - 1)
+	{
+		return;
+	}
+
+	int index = id.x * size + id.y;
+    
+    
+
+	v[index].x = (v[index].y +
+                            // Neighbors
+									(v[(id.x + 1) * size + id.y].x
+                                    + v[(id.x - 1) * size + id.y].x
+                                    + v[id.x * size + (id.y + 1)].x
+                                    + v[id.x * size + (id.y - 1)].x)
+							) / 4;
+	
+	
+	
+		//set bounds false
+	// x border
+	v[id.x] = v[id.x + 1];
+	v[id.x + size - 1] = v[id.x + size - 1];
+	// y Border
+	v[id.y] = v[size + id.y];
+	v[size - 1 * size + id.y] = v[size - 2 + id.y];
+	
+	//
+	
+}
+
+
+[numthreads(16, 16, 1)]
+void ProjectEnd(uint3 id : SV_DispatchThreadID)
+{
+    // TODO: insert actual code here!
+	int index = id.x * size + id.y;
+
+	
+	
+	v0[index].x -= 0.5f * (v[(id.x + 1) * size + id.y].x - v[(id.x - 1) * size + id.y].x) * size;
+	
+	v0[index].y -= 0.5f * (v[(id.x) * size + id.y + 1].x - v[(id.x) * size + id.y - 1].x) * size;
+
+	
+	
+	// x border
+	v0[id.x] = float2(v0[id.x + 1].x, -v0[id.x + 1].y);
+	v0[id.x + size - 1] = float2(v0[id.x + size - 1].x, -v0[id.x + size - 1].y);
+	
+	// y Border
+	v0[id.y] = float2(-v0[size + id.y].x, v0[size + id.y].y);
+	v0[size - 1 * size + id.y] = float2(-v0[size - 2 + id.y].x, v0[size - 2 + id.y].y);
+	
+	
+	if (id.x == 0 && id.y == 0)
+	{
+		v0[0] = 0.5f * (v0[size] + v0[1]);
+		v0[size - 1] = 0.5f * (v0[size * size - 1] + v0[size - 2]);
+		v0[size * size - 1] = 0.5f * (v0[size * size - 2] + v0[size * size - 1 + 1]);
+		v0[size * size - 1 + size - 1] = 0.5f * (v0[size * size - 2 + size - 1] + v0[size * size - 1 + size - 2]);
+	
+	}
+	
+}
+
+//Input
+float dtx;
+float dty;
+float sizefloat;
+//
+
+float i0, i1, j0, j1;
+float s0, s1, t0, t1;
+float tmp1, tmp2, x, y;
+
+float ifloat, jfloat;
+
+[numthreads(16, 16, 1)]
+void Advect(uint3 id : SV_DispatchThreadID)
+{
+    // TODO: insert actual code here!
+	int index = id.x * size + id.y;
+
+	
+	tmp1 = dtx * v0[index].x;
+	tmp2 = dty * v0[index].y;
+
+	x = (float)id.x - tmp1;
+	y = (float)id.y - tmp2; // float
+	
+                    //mathf.clamp?
+	if (x < 0.5f)
+		x = 0.5f;
+	if (x > sizefloat + 0.5f)
+		x = sizefloat + 0.5f;
+
+	i0 = floor(x);
+	i1 = i0 + 1.0f;
+
+	if (y < 0.5f)
+		y = 0.5f;
+	if (y > sizefloat + 0.5f)
+		y = sizefloat + 0.5f;
+
+	j0 = floor(y);
+	j1 = j0 + 1.0f;
+
+	s1 = x - i0;
+	s0 = 1.0f - s1;
+	t1 = y - j0;
+	t0 = 1.0f - t1;
+
+	int i0i = (int) clamp(i0, 0, size - 1);
+	int i1i = (int) clamp(i1, 0, size - 1);
+	int j0i = (int) clamp(j0, 0, size - 1);
+	int j1i = (int) clamp(j1, 0, size - 1);
+
+                    // fixxxxxxxxxxxxx
+	v[index] =
+                         // maybe will break it v0!
+                         s0 * (t0 * v0[i0i * size + j0i] + t1 * v0[i0i * size + j1i]) +
+                         s1 * (t0 * v0[i1i * size + j0i] + t1 * v0[i1i * size + j1i]);
+		
+	// x border
+	v[id.x] = float2(v[id.x + 1].x, -v[id.x + 1].y);
+	v[id.x + size - 1] = float2(v[id.x + size - 1].x, -v[id.x + size - 1].y);
+	
+	// y Border
+	v[id.y] = float2(-v[size + id.y].x, v[size + id.y].y);
+	v[size - 1 * size + id.y] = float2(-v[size - 2 + id.y].x, v[size - 2 + id.y].y);
+	
+	
+	if (id.x == 0 && id.y == 0)
+	{
+		v0[0] = 0.5f * (v0[size] + v0[1]);
+		v0[size - 1] = 0.5f * (v0[size * size - 1] + v0[size - 2]);
+		v0[size * size - 1] = 0.5f * (v0[size * size - 2] + v0[size * size - 1 + 1]);
+		v0[size * size - 1 + size - 1] = 0.5f * (v0[size * size - 2 + size - 1] + v0[size * size - 1 + size - 2]);
+	
+	}
+}
+
+
+[numthreads(16, 16, 1)]
+void Render(uint3 id : SV_DispatchThreadID)
+{
+    // TODO: insert actual code here!
+	int index = id.x * size + id.y;
+
+	Result[id.xy] = float4(v[index].x, v[index].y, 0, 0.0);
+	
+}
+
+
+
+float2 velToAdd;
+uint2 position;
+
+[numthreads(1, 1, 1)]
+void AddVelocity(uint3 id : SV_DispatchThreadID)
+{
+    // TODO: insert actual code here!
+	int index = position.x * size + position.y;
+
+	v[index] += velToAdd;
+	
+}

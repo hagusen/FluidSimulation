@@ -26,7 +26,7 @@ public class FluidSimulation : MonoBehaviour
         tex.wrapMode = TextureWrapMode.Clamp;
         tex.filterMode = filtermode;
 
-        fluid = new Fluid(diffuse, viscosity, N, cs);
+        fluid = new Fluid(diffuse, viscosity, N);
 
         RenderFluid();
 
