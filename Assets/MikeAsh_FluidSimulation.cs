@@ -17,7 +17,7 @@ public class MikeAsh_FluidSimulation : MonoBehaviour
         return Mathf.Clamp(x, 0, N - 1) + Mathf.Clamp(y, 0, N - 1) * N;
     }
 
-    public ComputeShader cstest;
+    public ComputeShader shader;
     public ComputeBuffer vBuffer;
     public ComputeBuffer v0Buffer;
     public int kernel;
@@ -28,11 +28,11 @@ public class MikeAsh_FluidSimulation : MonoBehaviour
     void Start() {
         vBuffer = new ComputeBuffer(N * N, 4);
         v0Buffer = new ComputeBuffer(N * N, 4);
-        kernel = cstest.FindKernel("LinearSolve");
-        cstest.SetBuffer(kernel, "v", vBuffer);
-        cstest.SetBuffer(kernel, "v0", v0Buffer);
+        kernel = shader.FindKernel("LinearSolve");
+        shader.SetBuffer(kernel, "v", vBuffer);
+        shader.SetBuffer(kernel, "v0", v0Buffer);
 
-        cstest.SetInt("size", N);
+        shader.SetInt("size", N);
 
 
 
@@ -172,11 +172,11 @@ public class MikeAsh_FluidSimulation : MonoBehaviour
 
             vBuffer.SetData(x);
             v0Buffer.SetData(x0);
-            cstest.SetFloat("a", a);
-            cstest.SetFloat("c", c);
+            shader.SetFloat("a", a);
+            shader.SetFloat("c", c);
 
             for (int i = 0; i < iter; i++) {
-                cstest.Dispatch(kernel, N/32, N / 32, 1);
+                shader.Dispatch(kernel, N/32, N / 32, 1);
 
                 vBuffer.GetData(x);
                 set_bnd(b, x, N);
@@ -234,6 +234,19 @@ public class MikeAsh_FluidSimulation : MonoBehaviour
     }
 
     void advect(int b, float[] d, float[] d0, float[] velocX, float[] velocY, float dt, int N) {
+
+
+
+
+
+
+
+
+
+
+
+
+        /*
         float i0, i1, j0, j1;
 
         float dtx = dt * (N - 2);
@@ -284,6 +297,8 @@ public class MikeAsh_FluidSimulation : MonoBehaviour
             }
         }
         set_bnd(b, d, N);
+        */
+
     }
     //  Possible rewrite big
     void set_bnd(int b, float[] x, int N) {
