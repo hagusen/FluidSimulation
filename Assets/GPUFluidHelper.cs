@@ -242,13 +242,13 @@ public class GPUFluidHelper : MonoBehaviour
 
         for (int i = 0; i < 128; i++) {
 
-            v[62*62 + i] += Vector2.right * 100;
+            v[62*62 + i] += Vector2.right * 100 * 1000;
 
         }
         RenderFluid();
 
-        velocities.SetData(v);
-        //velocities0.SetData(v);
+        //velocities.SetData(v);
+        velocities0.SetData(v);
         Init();
         if (Input.GetKeyDown(KeyCode.Space)) {
 

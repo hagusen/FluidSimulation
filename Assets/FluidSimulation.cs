@@ -10,15 +10,10 @@ public class FluidSimulation : MonoBehaviour
     public FilterMode filtermode = FilterMode.Point;
     public Texture2D tex;
 
-    public float diffuse = 0.0001f;
     public float viscosity = 0.0002f;
-    //2D to 1D array
 
     public bool render = false;
     public float power = 8;
-
-
-    public ComputeShader cs;
 
 
     void Start() {
@@ -26,17 +21,9 @@ public class FluidSimulation : MonoBehaviour
         tex.wrapMode = TextureWrapMode.Clamp;
         tex.filterMode = filtermode;
 
-        fluid = new Fluid(diffuse, viscosity, N);
+        fluid = new Fluid(viscosity, N);
 
-        RenderFluid();
-
-        //fluid.AddDensity(2, 3, 100);
-        //fluid.AddVelocity(2, 3, );
-
-
-
-
-        // Call compute shader
+        RenderFluid ();
 
 
 
@@ -62,7 +49,7 @@ public class FluidSimulation : MonoBehaviour
                 }
             }
 
-            tex.SetPixel(13, y, Color.blue);
+            //tex.SetPixel(13, y, Color.blue);
         }
 
         // Apply all SetPixel calls
@@ -84,7 +71,6 @@ public class FluidSimulation : MonoBehaviour
         if (Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out hit)) {
             Vector2Int v = Vector2Int.RoundToInt(hit.textureCoord * N);
             if (Input.GetKey(KeyCode.Mouse0)) {
-                fluid.AddDensity(v.x, v.y, 100);
                 fluid.AddVelocity(v.x, v.y, s * power / 8);
 
             }
@@ -106,7 +92,6 @@ public class FluidSimulation : MonoBehaviour
 
 
         if (Input.GetKeyDown(KeyCode.Space)) {
-            fluid.AddDensity(2, 3, 100);
             //fluid.AddVelocity(2, 3, 2, 4);
         }
 
@@ -124,6 +109,6 @@ public class FluidSimulation : MonoBehaviour
     }
 
     private void OnDestroy() {
-        fluid.OnDestroy();
+
     }
 }
