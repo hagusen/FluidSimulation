@@ -387,15 +387,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: db00fb2c08c5fb84aaa4e446da73cfb2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  serializationData:
-    SerializedFormat: 2
-    SerializedBytes: 
-    ReferencedUnityObjects: []
-    SerializedBytesString: 
-    Prefab: {fileID: 0}
-    PrefabModificationsReferencedUnityObjects: []
-    PrefabModifications: []
-    SerializationNodes: []
   shader: {fileID: 7200000, guid: 043d1a7aec23da641a181cce82b072c3, type: 3}
   result: {fileID: 0}
   iterations: 400
@@ -527,7 +518,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6874725616081368268, guid: 3976a24a57f78ae4d9a62a951902d2ee, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 3976a24a57f78ae4d9a62a951902d2ee, type: 3}

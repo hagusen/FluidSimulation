@@ -1,11 +1,10 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using Sirenix.Serialization;
-using Sirenix.OdinInspector;
+
 using System.Linq;
 
-public class ComputeTest : SerializedMonoBehaviour
+public class ComputeTest : MonoBehaviour
 {
 
 
