@@ -3,6 +3,8 @@
 Basic Cpu Fluid in Unity 
 
 
-picture 
-
-![alt text](https://github.com/[username]/[reponame]/blob/[branch]/image.jpg?raw=true)
+Results
+ 
+![](https://github.com/hagusen/FluidSimulation/blob/master/Results/CPUResult4.png?raw=false )
+![](https://github.com/hagusen/FluidSimulation/blob/master/Results/CPUResult1.png?raw=false )
+![](https://github.com/hagusen/FluidSimulation/blob/master/Results/CPUResult2.png?raw=false )
