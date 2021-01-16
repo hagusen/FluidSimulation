@@ -8,7 +8,6 @@ using UnityEngine;
 [System.Serializable]
 public class Fluid
 {
-
     public int size; //size
     public float visc; // Viscosity
 
@@ -203,6 +202,7 @@ public class Fluid
         x[size - 1, 0] = 0.5f * (x[size - 2, 0] + x[size - 1, 1]);
         x[size - 1, size - 1] = 0.5f * (x[size - 2, size - 1] + x[size - 1, size - 2]);
     }
+    
     /*
     void set_bndV2(int b, Vector2[,] x) {
 

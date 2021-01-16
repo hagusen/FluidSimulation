@@ -459,6 +459,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Quad (2)
       objectReference: {fileID: 0}
+    - target: {fileID: 2080870305508807109, guid: d18dae7ebd7e1244ca230d683d9e6efb, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: d18dae7ebd7e1244ca230d683d9e6efb, type: 3}
 --- !u!1001 &6874725617404704292
